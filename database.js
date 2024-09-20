@@ -1,5 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./database/hotel.db');
+const bcrypt = require('bcrypt');
+
+const db = new sqlite3.Database('./database/hotel2.db');
 
 db.serialize(() => {
     // Criação das tabelas
@@ -13,7 +15,9 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT,
         email TEXT,
-        telefone TEXT
+        telefone TEXT,
+        username TEXT UNIQUE,
+        senha TEXT
     )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS quartos (
@@ -39,6 +43,15 @@ db.serialize(() => {
         metodo_pagamento TEXT,
         status TEXT
     )`);
+
+    // Seeder: Criação do utilizador admin
+    const adminUsername = 'admin';
+    const adminPassword = 'admin';
+    const saltRounds = 10;
+    const hash = bcrypt.hashSync(adminPassword, saltRounds);
+
+    db.run(`INSERT OR IGNORE INTO utilizadores (nome, email, telefone, username, senha) 
+            VALUES ('Administrador', 'admin@hotel.com', '123456789', ?, ?)`, [adminUsername, hash]);
 });
 
 module.exports = db;
