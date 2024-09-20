@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const funcionariosRoutes = require('./routes/funcionarios');
 const utilizadoresRoutes = require('./routes/utilizadores');
@@ -11,6 +12,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(bodyParser.json());
+app.use(cors());  // Habilita CORS para todas as rotas
 
 app.use('/funcionarios', funcionariosRoutes);
 app.use('/utilizadores', utilizadoresRoutes);
