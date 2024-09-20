@@ -52,6 +52,17 @@ router.post('/login', (req, res) => {
     });
 });
 
+// Gerir utilizador (listar todos)
+router.get('/', (req, res) => {
+    db.all('SELECT * FROM utilizadores', (err, rows) => {
+        if (err) {
+            res.status(500).send(err.message);
+        } else {
+            res.json(rows);
+        }
+    });
+});
+
 // Middleware para verificar o token JWT
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
