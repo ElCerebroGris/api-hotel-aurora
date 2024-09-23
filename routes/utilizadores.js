@@ -44,13 +44,23 @@ router.post('/login', (req, res) => {
             if (validPassword) {
                 // Gera um token JWT
                 const token = jwt.sign({ id: row.id, username: row.username }, secretKey, { expiresIn: '1h' });
-                res.json({ message: 'Login bem-sucedido', token });
+                
+                // Exclui a senha dos dados retornados
+                const { senha, ...userWithoutPassword } = row;
+
+                // Retorna os dados do utilizador sem a senha e o token JWT
+                res.json({
+                    message: 'Login bem-sucedido',
+                    token,
+                    user: userWithoutPassword
+                });
             } else {
                 res.status(400).send('Nome de utilizador ou senha inválidos.');
             }
         }
     });
 });
+
 
 // Gerir utilizador (listar todos)
 router.get('/', (req, res) => {
