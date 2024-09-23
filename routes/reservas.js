@@ -57,4 +57,39 @@ router.get('/', (req, res) => {
     });
 });
 
+router.get('/estatisticas', (req, res) => {
+    const { periodo } = req.query; // 'dia', 'mes', 'ano'
+
+    let groupBy;
+    if (periodo === 'mes') {
+        groupBy = "strftime('%Y-%m', checkin_date)"; // Agrupa por mês
+    } else if (periodo === 'ano') {
+        groupBy = "strftime('%Y', checkin_date)"; // Agrupa por ano
+    } else {
+        groupBy = "DATE(checkin_date)"; // Padrão: Agrupa por dia
+    }
+
+    const query = `
+        SELECT 
+            ${groupBy} as data, 
+            COUNT(*) as total_reservas, 
+            SUM(q.preco) as montante_faturado
+        FROM reservas r
+        JOIN quartos q ON r.quarto_id = q.id
+        GROUP BY ${groupBy}
+        ORDER BY data ASC
+    `;
+
+    db.all(query, (err, rows) => {
+        if (err) {
+            res.status(500).send(err.message);
+        } else {
+            res.json({
+                periodos: rows
+            });
+        }
+    });
+});
+
+
 module.exports = router;
