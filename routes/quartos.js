@@ -8,7 +8,7 @@ router.get("/", (req, res) => {
 
   // Query para selecionar todos os quartos com verificação da ocupação na data de hoje
   const query = `
-        SELECT q.id, q.comodidades, q.tipo, q.preco,
+        SELECT q.id, q.comodidades, q.tipo, q.descricao, q.preco,
                CASE
                    WHEN EXISTS (
                        SELECT 1
@@ -33,9 +33,9 @@ router.get("/", (req, res) => {
 
 // Adicionar quarto
 router.post("/", (req, res) => {
-  const { tipo, comodidades, preco } = req.body;
+  const { tipo, descricao, comodidades, preco } = req.body;
   db.run(
-    "INSERT INTO quartos (tipo, comodidades, preco) VALUES (?, ?, ?)",
+    "INSERT INTO quartos (tipo, descricao, comodidades, preco) VALUES (?, ?, ?, ?)",
     [tipo, comodidades, preco],
     function (err) {
       if (err) {

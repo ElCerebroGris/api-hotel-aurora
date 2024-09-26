@@ -5,6 +5,7 @@ const cors = require('cors');
 const funcionariosRoutes = require('./routes/funcionarios');
 const utilizadoresRoutes = require('./routes/utilizadores');
 const quartosRoutes = require('./routes/quartos');
+const servicosRoutes = require('./routes/servicos');
 const reservasRoutes = require('./routes/reservas');
 const pagamentosRoutes = require('./routes/pagamentos');
 
@@ -17,6 +18,7 @@ app.use(cors());  // Habilita CORS para todas as rotas
 app.use('/funcionarios', funcionariosRoutes);
 app.use('/utilizadores', utilizadoresRoutes);
 app.use('/quartos', quartosRoutes);
+app.use('/servicos', servicosRoutes);
 app.use('/reservas', reservasRoutes);
 app.use('/pagamentos', pagamentosRoutes);
 
