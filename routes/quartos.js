@@ -36,7 +36,7 @@ router.post("/", (req, res) => {
   const { tipo, descricao, comodidades, preco } = req.body;
   db.run(
     "INSERT INTO quartos (tipo, descricao, comodidades, preco) VALUES (?, ?, ?, ?)",
-    [tipo, comodidades, preco],
+    [tipo, descricao, comodidades, preco],
     function (err) {
       if (err) {
         res.status(500).send(err.message);

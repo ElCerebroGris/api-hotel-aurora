@@ -1,7 +1,7 @@
 const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcrypt");
 
-const db = new sqlite3.Database("./database/hotel3.db");
+const db = new sqlite3.Database("./database/hotel4.db");
 
 db.serialize(() => {
   // Criação das tabelas
