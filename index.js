@@ -11,9 +11,8 @@ const pagamentosRoutes = require('./routes/pagamentos');
 
 const app = express();
 const PORT = 3000;
-
-app.use(bodyParser.json());
 app.use(cors());  // Habilita CORS para todas as rotas
+app.use(bodyParser.json());
 
 app.use('/funcionarios', funcionariosRoutes);
 app.use('/utilizadores', utilizadoresRoutes);
