@@ -3,67 +3,64 @@ const router = express.Router();
 const db = require("../database");
 
 // Fazer reserva
-router.post("/", (req, res) => {
-  const { utilizador_id, quarto_id, checkin_date, checkout_date, servicos } =
-    req.body;
+// Rota para criar uma nova reserva
+router.post("/", async (req, res) => {
+  const { quarto_id, checkin_date, checkout_date, utilizador_id, servicos } = req.body;
   const confirmacao = Math.random().toString(36).substr(2, 9);
 
-  db.run(
-    `INSERT INTO reservas (utilizador_id, quarto_id, checkin_date, checkout_date, confirmacao, estado)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      utilizador_id,
-      quarto_id,
-      checkin_date,
-      checkout_date,
-      confirmacao,
-      "pendente",
-    ],
-    function (err) {
-      if (err) {
-        res.status(500).send(err.message);
-      } else {
-        const reservaId = this.lastID; // ID da reserva recém-criada
-
-        // Verifica se há serviços a serem associados à reserva
-        if (servicos && servicos.length > 0) {
-          const stmt = db.prepare(
-            "INSERT INTO reservas_servicos (reserva_id, servico_id, quantidade, preco_total) VALUES (?, ?, ?, ?)"
-          );
-
-          servicos.forEach((servico) => {
-            // Obter o preço do serviço
-            db.get(
-              "SELECT preco FROM servicos WHERE id = ?",
-              [servico],
-              (err, row) => {
-                if (err) {
-                  res.status(500).send(err.message);
-                } else if (row) {
-                  const precoTotal = row.preco * 1;
-
-                  // Inserir o serviço associado à reserva
-                  stmt.run(reservaId, servico, 1, precoTotal);
-                }
-              }
-            );
-          });
-
-          stmt.finalize((err) => {
-            if (err) {
-              res.status(500).send(err.message);
-            } else {
-              res.status(201).send({ confirmacao });
-            }
-          });
-        } else {
-          // Se não houver serviços, retorna a confirmação da reserva
-          res.status(201).send({ confirmacao });
+  try {
+    // Insere a reserva na tabela `reservas`
+    const reservaId = await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO reservas (quarto_id, checkin_date, checkout_date, utilizador_id, confirmacao, estado)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [quarto_id, checkin_date, checkout_date, utilizador_id, confirmacao, "pendente"],
+        function (err) {
+          if (err) reject(err);
+          else resolve(this.lastID); // Obtém o ID da reserva recém-criada
         }
+      );
+    });
+
+    // Insere os serviços associados à reserva
+    if (servicos && servicos.length > 0) {
+      // Prepara o statement para inserir serviços
+      const stmt = db.prepare(
+        `INSERT INTO reservas_servicos (reserva_id, servico_id, quantidade, preco_total) VALUES (?, ?, ?, ?)`
+      );
+
+      for (const servicoId of servicos) {
+        const preco = await new Promise((resolve, reject) => {
+          db.get(
+            `SELECT preco FROM servicos WHERE id = ?`,
+            [servicoId],
+            (err, row) => {
+              if (err) reject(err);
+              else if (row) resolve(row.preco);
+              else reject(new Error("Serviço não encontrado"));
+            }
+          );
+        });
+
+        // Insere o serviço com quantidade 1 e calcula o preço total
+        await new Promise((resolve, reject) => {
+          stmt.run(reservaId, servicoId, 1, preco, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
       }
+
+      stmt.finalize(); // Finaliza o statement após a execução
     }
-  );
+
+    // Retorna a confirmação da reserva
+    res.status(201).send({ confirmacao });
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
 });
+
 
 router.put("/:id/estado", (req, res) => {
   const { id } = req.params; // ID da reserva
@@ -99,9 +96,19 @@ router.put("/:id/estado", (req, res) => {
 
 router.get("/", (req, res) => {
   const query = `
-        SELECT r.id, r.confirmacao, r.checkin_date, r.checkout_date, u.nome AS utilizador, q.descricao AS quarto, r.estado,
-        GROUP_CONCAT(s.descricao || ':' || s.preco) AS servicos,
-               SUM(COALESCE(q.preco, 0) + COALESCE(rs.preco_total, 0)) AS montante_total
+        SELECT 
+            r.id, 
+            r.confirmacao, 
+            r.checkin_date, 
+            r.checkout_date, 
+            u.nome AS utilizador, 
+            q.descricao AS quarto, 
+            r.estado,
+            GROUP_CONCAT(s.descricao, ', ') AS servicos,
+            (
+                (julianday(r.checkout_date) - julianday(r.checkin_date)) * COALESCE(q.preco, 0) + 
+                SUM(COALESCE(rs.preco_total, 0))
+            ) AS montante_total
         FROM reservas r
         LEFT JOIN quartos q ON r.quarto_id = q.id
         LEFT JOIN utilizadores u ON r.utilizador_id = u.id
@@ -110,9 +117,7 @@ router.get("/", (req, res) => {
         GROUP BY r.id
     `;
 
-  const stmt = db.prepare(query);
-
-  stmt.finalize().all(query, (err, rows) => {
+  db.all(query, [], (err, rows) => {
     if (err) {
       res.status(500).send(err.message);
     } else {
@@ -120,6 +125,8 @@ router.get("/", (req, res) => {
     }
   });
 });
+
+
 
 router.get("/estatisticas", (req, res) => {
   const { periodo } = req.query; // 'dia', 'mes', 'ano'
