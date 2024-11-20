@@ -21,15 +21,6 @@ app.use("/servicos", servicosRoutes);
 app.use("/reservas", reservasRoutes);
 app.use("/pagamentos", pagamentosRoutes);
 
-// Add this to the very top of the first file loaded in your app
-var apm = require("elastic-apm-node").start({
-  serviceName: "my-service-name",
-  secretToken: "zkHRYRHYcUJ7iDUTwi",
-  serverUrl:
-    "https://d75d8ed7a3e946b891ff3d76d37ae297.apm.us-central1.gcp.cloud.es.io:443",
-  environment: "my-environment",
-});
-
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

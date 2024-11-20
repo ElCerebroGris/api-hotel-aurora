@@ -110,7 +110,9 @@ router.get("/", (req, res) => {
         GROUP BY r.id
     `;
 
-  db.all(query, (err, rows) => {
+  const stmt = db.prepare(query);
+
+  stmt.finalize().all(query, (err, rows) => {
     if (err) {
       res.status(500).send(err.message);
     } else {
